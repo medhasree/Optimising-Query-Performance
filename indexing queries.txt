@@ -1,0 +1,264 @@
+1.List Incident Id and category names where offense type is 'criminal-trespassing' or 'drug-methampetamine-possess' or 'disturbing-the-peace'
+
+select C._INCIDENT_ID_,o._OFFENSE_CATEGORY_NAME_ from [denver_crime].[dbo].[crime] c
+, [denver_crime].[dbo].[offense_codes2] o
+where o.[_OFFENSE_TYPE_ID_]= c.[_OFFENSE_TYPE_ID_]
+and C.[_OFFENSE_TYPE_ID_] IN('criminal-trespassing','drug-methampetamine-possess','disturbing-the-peace')
+
+
+Clustered Index on Offense Category name:
+
+USE [denver_crime]
+GO
+
+SET ANSI_PADDING ON
+GO
+
+/****** Object:  Index [ClusteredIndex-20190429-155454]    Script Date: 4/29/2019 3:56:44 PM ******/
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-155454] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_CATEGORY_NAME_] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+Time: 093 ms
+
+Create Non-clustered Index:
+
+USE [denver_crime]
+GO
+
+SET ANSI_PADDING ON
+GO
+
+/****** Object:  Index [NonClusteredIndex-20190429-155827]    Script Date: 4/29/2019 3:58:50 PM ******/
+CREATE NONCLUSTERED INDEX [NonClusteredIndex-20190429-155827] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_TYPE_ID_] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+
+Time:016 ms
+
+Drop the clustered Index created:
+
+USE [denver_crime]
+GO
+
+/****** Object:  Index [ClusteredIndex-20190429-155454]    Script Date: 4/29/2019 3:59:55 PM ******/
+DROP INDEX [ClusteredIndex-20190429-155454] ON [dbo].[offense_codes2] WITH ( ONLINE = OFF )
+GO
+	
+Time:052ms
+
+2.list Incident ID where crime is reported in a different year than the crime has actually occured
+select C._INCIDENT_ID_,o._OFFENSE_CATEGORY_NAME_,c._REPORTED_DATE_,c._FIRST_OCCURRENCE_DATE_ from [denver_crime].[dbo].[crime] c
+left join
+[denver_crime].[dbo].[offense_codes2] o
+on o.[_OFFENSE_TYPE_ID_]= c.[_OFFENSE_TYPE_ID_]
+where year([_REPORTED_DATE_])>year([_FIRST_OCCURRENCE_DATE_])
+
+Without Indexing Time: 0124 ms
+
+Non-Clustered Index on Reported Date and First Occurrence date:
+
+CREATE NONCLUSTERED INDEX [NonClusteredIndex-20190429-161717] ON [dbo].[crime]
+(
+	[_FIRST_OCCURRENCE_DATE_] ASC
+)
+CREATE NONCLUSTERED INDEX [NonClusteredIndex-20190429-161656] ON [dbo].[crime]
+(
+	[_REPORTED_DATE_] ASC
+)
+
+Time: 138ms
+
+====Create a clustered index on _INCIDENT_ID_========
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-162234] ON [dbo].[crime]
+(
+	[_INCIDENT_ID_] ASC
+)
+
+Time: 81ms
+
+========Create Clustered Index on _OFFENSE_CATEGORY_NAME_ ==============
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-163004] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_CATEGORY_NAME_] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+tIME: 72MS
+
+3.select _OFFENSE_TYPE_ID_,
+count(_OFFENSE_TYPE_ID_) as offensetypecount 
+from [denver_crime].[dbo].[crime] 
+
+group by _OFFENSE_TYPE_ID_
+order by _OFFENSE_TYPE_ID_ desc
+
+Time: 141ms
+=============Create Clustered Index on _OFFENSE_TYPE_ID_ DESC============
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-203810] ON [dbo].[crime]
+(
+	[_OFFENSE_TYPE_ID_] ASC
+)
+TIME:52MS
+
+============Create non-clustered Index by dropping the clustered index on the same colum _OFFENSE_TYPE_ID_ =========
+
+DROP INDEX [ClusteredIndex-20190429-203810] ON [dbo].[crime]
+
+CREATE NONCLUSTERED INDEX [NonClusteredIndex-20190429-204016] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_TYPE_ID_] DESC
+)
+TIME:60MS
+
+
+4.
+select C.[_INCIDENT_ID_],C.[_IS_CRIME_],O.[_OFFENSE_CATEGORY_NAME_] 
+from [denver_crime].[dbo].[crime] c
+, [denver_crime].[dbo].[offense_codes2] o
+
+where o.[_OFFENSE_TYPE_ID_]= c.[_OFFENSE_TYPE_ID_]
+
+AND C.[_OFFENSE_CATEGORY_ID_]='drug-alcohol'
+
+Time: 147ms
+
+========create non clustered indexes on _IS_CRIME_ AND _OFFENSE_CATEGORY_NAME_ ============================
+CREATE NONCLUSTERED INDEX [NonClusteredIndex-20190429-210559] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_CATEGORY_NAME_] ASC,
+	[_IS_CRIME_] ASC
+)
+Time:64 ms
+
+5. List of all incidents where the offense type is traffic-accident
+
+select c.[_INCIDENT_ID_],c.[_IS_CRIME_],O.[_OFFENSE_CATEGORY_NAME_] 
+from [denver_crime].[dbo].[crime] c
+, [denver_crime].[dbo].[offense_codes2] o
+
+where o.[_OFFENSE_TYPE_ID_]= c.[_OFFENSE_TYPE_ID_]
+AND c.[_OFFENSE_TYPE_ID_]='traffic-accident'
+
+Time:138 ms
+
+=======Create clustered Index on _OFFENSE_TYPE_ID_ =============================
+
+
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-203218] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_TYPE_ID_] ASC
+)
+Time:66ms
+
+6.
+select distinct c.[_INCIDENT_ID_],o.[_OFFENSE_TYPE_ID_] 
+from [denver_crime].[dbo].[crime] c
+, [denver_crime].[dbo].[offense_codes2] o
+
+where o.[_OFFENSE_TYPE_ID_]= c.[_OFFENSE_TYPE_ID_]
+and c.[_NEIGHBORHOOD_ID_]  
+in ('overland','montclair')
+
+Time: 146ms
+
+================create clustered index on _OFFENSE_TYPE_ID_ ================
+/****** Object:  Index [ClusteredIndex-20190429-211115]    Script Date: 4/29/2019 9:11:54 PM ******/
+CREATE CLUSTERED INDEX [ClusteredIndex-20190429-211115] ON [dbo].[offense_codes2]
+(
+	[_OFFENSE_TYPE_ID_] ASC
+)
+
+Time: 47ms
+
+
+
+Partitioning:
+
+Offense Code Table:
+
+USE [denver_crime]
+GO
+BEGIN TRANSACTION
+CREATE PARTITION FUNCTION [PF_Offense_Code](nvarchar(50)) AS RANGE LEFT FOR VALUES (N'2500', N'5000', N'7500', N'10000')
+
+CREATE PARTITION SCHEME [PS_Offense_Code] AS PARTITION [PF_Offense_Code] TO ([FG_2500], [FG_5000], [FG_7500], [FG_10000], [PRIMARY])
+
+
+USE [denver_crime]
+GO
+
+/****** Object:  Table [dbo].[offense_codes2]    Script Date: 5/1/2019 6:52:26 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[offense_codes2](
+	[_OFFENSE_CODE_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_CODE_EXTENSION_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_TYPE_ID_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_TYPE_NAME_] [nvarchar](100) NOT NULL,
+	[_OFFENSE_CATEGORY_ID_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_CATEGORY_NAME_] [nvarchar](50) NOT NULL,
+	[_IS_CRIME_] [nvarchar](50) NOT NULL,
+	[_IS_TRAFFIC_] [nvarchar](50) NOT NULL
+) 
+ON PS_OccurenceDate(_OFFENSE_CODE_)
+GO
+
+USE [denver_crime]
+GO
+
+
+TABLE CRIME:
+
+CREATE PARTITION FUNCTION [_PF_CRIME_YEAR_](varchar(50)) AS RANGE LEFT FOR VALUES (N'2016', N'2017', N'2018')
+
+
+CREATE PARTITION SCHEME [_PF_CRIME_YEAR_] AS PARTITION [PF_CRIME_YEAR_] TO ([FG_2015], [FG_2016], [FG_2017], [PRIMARY])
+
+
+USE [denver_crime]
+GO
+
+/****** Object:  Table [dbo].[crime2]    Script Date: 5/1/2019 7:05:42 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[crime2](
+	[_CRIME_YEAR_][varchar](50) NOT NULL,
+	[_INCIDENT_ID_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_ID_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_CODE_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_CODE_EXTENSION_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_TYPE_ID_] [nvarchar](50) NOT NULL,
+	[_OFFENSE_CATEGORY_ID_] [nvarchar](50) NOT NULL,
+	[_FIRST_OCCURRENCE_DATE_] [nvarchar](50) NOT NULL,
+	[_LAST_OCCURRENCE_DATE_] [nvarchar](50) NOT NULL,
+	[_REPORTED_DATE_] [nvarchar](50) NOT NULL,
+	[_INCIDENT_ADDRESS_] [nvarchar](50) NOT NULL,
+	[_GEO_X_] [nvarchar](50) NOT NULL,
+	[_GEO_Y_] [nvarchar](50) NOT NULL,
+	[_GEO_LON_] [nvarchar](50) NOT NULL,
+	[_GEO_LAT_] [nvarchar](50) NOT NULL,
+	[_DISTRICT_ID_] [nvarchar](50) NOT NULL,
+	[_PRECINCT_ID_] [nvarchar](50) NOT NULL,
+	[_NEIGHBORHOOD_ID_] [nvarchar](50) NOT NULL,
+	[_IS_CRIME_] [nvarchar](50) NOT NULL,
+	[_IS_TRAFFIC_] [nvarchar](50) NOT NULL
+)
+ON PS_CRIME_YEAR_(_CRIME_YEAR_)
+GO
+
+USE [denver_crime]
+GO
+
